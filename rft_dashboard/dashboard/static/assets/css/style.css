@@ -1,0 +1,33 @@
+body {
+    background-color: #f4f7fa;
+    font-family: 'Poppins', sans-serif;
+}
+
+h2 {
+    font-family: 'Montserrat', sans-serif;
+    color: #2c3e50;
+}
+
+.control-box {
+    background-color: #fff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+label {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+button {
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #3498db;
+    color: #fff;
+}
+
+canvas {
+    margin-top: 20px;
+}

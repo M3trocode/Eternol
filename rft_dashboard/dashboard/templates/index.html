@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Corporate Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'assets/css/style.css' %}">
+</head>
+<body>
+    <div class="container-fluid my-5">
+        <h2 class="text-center mb-4">Pressure vs Depth Dashboard</h2>
+        
+        <!-- Data Entry Section -->
+        <div class="row mb-5">
+            <div class="col-md-3">
+                <h4>Paste Your Data:</h4>
+                <form method="POST" action="{% url 'submit_data' %}">
+                    {% csrf_token %}
+                    <textarea class="form-control mb-3" name="data" placeholder="Paste your data here..." rows="5"></textarea>
+                    <button type="submit" class="btn btn-primary w-100 mb-3">Submit Data</button>
+                </form>
+
+                <h4>Upload Data (CSV):</h4>
+                <form method="POST" action="{% url 'submit_data' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="file" name="csv_file" class="form-control mb-3">
+                    <button type="submit" class="btn btn-secondary w-100">Upload Data</button>
+                </form>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="col-md-9">
+                <h4>Graph Controls</h4>
+                <div class="row mb-4">
+                    <!-- Gas Control -->
+                    <div class="col-md-4">
+                        <div class="control-box border p-3" style="background-color: red;  color:white;">
+                            <h5>Gas</h5>
+                            <label for="gasMinPressure">Min Pressure (psia)</label>
+                            <input type="range" id="gasMinPressure" min="2400" max="2600" value="2528" class="form-range">
+                            <label for="gasDepthRange">Depth Range (ft)</label>
+                            <input type="range" id="gasDepthRange" min="1400" max="1600" value="1500" class="form-range">
+                            <label for="gasGradient">Pressure Gradient</label>
+                            <input type="range" id="gasGradient" min="0.02" max="0.07" step="0.001" value="0.03" class="form-range">
+                        </div>
+                    </div>
+
+                    <!-- Oil Control -->
+                    <div class="col-md-4">
+                        <div class="control-box border p-3" style="background-color: green;  color:white;">
+                            <h5>Oil</h5>
+                            <label for="oilMinPressure">Min Pressure (psia)</label>
+                            <input type="range" id="oilMinPressure" min="2400" max="2600" value="2499" class="form-range">
+                            <label for="oilDepthRange">Depth Range (ft)</label>
+                            <input type="range" id="oilDepthRange" min="1500" max="1600" value="1550" class="form-range">
+                            <label for="oilGradient">Pressure Gradient</label>
+                            <input type="range" id="oilGradient" min="0.35" max="1.5" step="0.01" value="1.0" class="form-range">
+                        </div>
+                    </div>
+
+                    <!-- Water Control -->
+                    <div class="col-md-4">
+                        <div class="control-box border p-3" style="background-color: blue;  color:white;">
+                            <h5>Water</h5>
+                            <label for="waterMinPressure">Min Pressure (psia)</label>
+                            <input type="range" id="waterMinPressure" min="2400" max="2600" value="2509" class="form-range">
+                            <label for="waterDepthRange">Depth Range (ft)</label>
+                            <input type="range" id="waterDepthRange" min="1500" max="1650" value="1600" class="form-range">
+                            <label for="waterGradient">Pressure Gradient</label>
+                            <input type="range" id="waterGradient" min="0.42" max="1.5" step="0.01" value="1.0" class="form-range">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Graph Section -->
+                <canvas id="pressureDepthChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{% static 'assets/js/scripts.js' %}"></script>
+</body>
+</html>
