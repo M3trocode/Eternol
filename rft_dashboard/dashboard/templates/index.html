@@ -11,77 +11,193 @@
 <body>
     <div class="container-fluid my-5">
         <h2 class="text-center mb-4">Pressure vs Depth Dashboard</h2>
-        
+    
         <!-- Data Entry Section -->
         <div class="row mb-5">
             <div class="col-md-3">
                 <h4>Paste Your Data:</h4>
-                <form method="POST" action="{% url 'submit_data' %}">
+                <!-- Added ID for easier AJAX submission -->
+                <form id="pasteDataForm">
                     {% csrf_token %}
-                    <textarea class="form-control mb-3" name="data" placeholder="Paste your data here..." rows="5"></textarea>
+                    <textarea class="form-control mb-3" id="pasteData" placeholder="Paste your data here..." rows="5"></textarea>
                     <button type="submit" class="btn btn-primary w-100 mb-3">Submit Data</button>
                 </form>
-
+    
                 <h4>Upload Data (CSV):</h4>
-                <form method="POST" action="{% url 'submit_data' %}" enctype="multipart/form-data">
+                <!-- Added ID for easier AJAX submission -->
+                <form id="uploadDataForm" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <input type="file" name="csv_file" class="form-control mb-3">
+                    <input type="file" id="csvFile" class="form-control mb-3">
                     <button type="submit" class="btn btn-secondary w-100">Upload Data</button>
                 </form>
             </div>
-
-            <!-- Controls Section -->
+    
+            <!-- Graph Controls and Canvas Section -->
             <div class="col-md-9">
                 <h4>Graph Controls</h4>
                 <div class="row mb-4">
                     <!-- Gas Control -->
                     <div class="col-md-4">
-                        <div class="control-box border p-3" style="background-color: red;  color:white;">
+                        <div class="control-box border p-3" style="background-color: red; color: white;">
                             <h5>Gas</h5>
                             <label for="gasMinPressure">Min Pressure (psia)</label>
-                            <input type="range" id="gasMinPressure" min="2400" max="2600" value="2528" class="form-range">
+                            <input type="range" id="gasMinPressure" min="2400" max="2600" value="2528" class="form-range controller">
+                            <span id="gasMinPressureValue">2528</span> psia
                             <label for="gasDepthRange">Depth Range (ft)</label>
-                            <input type="range" id="gasDepthRange" min="1400" max="1600" value="1500" class="form-range">
+                            <input type="range" id="gasDepthRange" min="1400" max="1600" value="1500" class="form-range controller">
+                            <span id="gasDepthRangeValue">1500</span> ft
                             <label for="gasGradient">Pressure Gradient</label>
-                            <input type="range" id="gasGradient" min="0.02" max="0.07" step="0.001" value="0.03" class="form-range">
+                            <input type="range" id="gasGradient" min="0.02" max="0.07" step="0.001" value="0.03" class="form-range controller">
+                            <span id="gasGradientValue">0.03</span>
                         </div>
                     </div>
-
+    
                     <!-- Oil Control -->
                     <div class="col-md-4">
-                        <div class="control-box border p-3" style="background-color: green;  color:white;">
+                        <div class="control-box border p-3" style="background-color: green; color: white;">
                             <h5>Oil</h5>
                             <label for="oilMinPressure">Min Pressure (psia)</label>
-                            <input type="range" id="oilMinPressure" min="2400" max="2600" value="2499" class="form-range">
+                            <input type="range" id="oilMinPressure" min="2400" max="2600" value="2499" class="form-range controller">
+                            <span id="oilMinPressureValue">2499</span> psia
                             <label for="oilDepthRange">Depth Range (ft)</label>
-                            <input type="range" id="oilDepthRange" min="1500" max="1600" value="1550" class="form-range">
+                            <input type="range" id="oilDepthRange" min="1500" max="1600" value="1550" class="form-range controller">
+                            <span id="oilDepthRangeValue">1550</span> ft
                             <label for="oilGradient">Pressure Gradient</label>
-                            <input type="range" id="oilGradient" min="0.35" max="1.5" step="0.01" value="1.0" class="form-range">
+                            <input type="range" id="oilGradient" min="0.35" max="1.5" step="0.01" value="1.0" class="form-range controller">
+                            <span id="oilGradientValue">1.0</span>
                         </div>
                     </div>
-
+    
                     <!-- Water Control -->
                     <div class="col-md-4">
-                        <div class="control-box border p-3" style="background-color: blue;  color:white;">
+                        <div class="control-box border p-3" style="background-color: blue; color: white;">
                             <h5>Water</h5>
                             <label for="waterMinPressure">Min Pressure (psia)</label>
-                            <input type="range" id="waterMinPressure" min="2400" max="2600" value="2509" class="form-range">
+                            <input type="range" id="waterMinPressure" min="2400" max="2600" value="2509" class="form-range controller">
+                            <span id="waterMinPressureValue">2509</span> psia
                             <label for="waterDepthRange">Depth Range (ft)</label>
-                            <input type="range" id="waterDepthRange" min="1500" max="1650" value="1600" class="form-range">
+                            <input type="range" id="waterDepthRange" min="1500" max="1650" value="1600" class="form-range controller">
+                            <span id="waterDepthRangeValue">1600</span> ft
                             <label for="waterGradient">Pressure Gradient</label>
-                            <input type="range" id="waterGradient" min="0.42" max="1.5" step="0.01" value="1.0" class="form-range">
+                            <input type="range" id="waterGradient" min="0.42" max="1.5" step="0.01" value="1.0" class="form-range controller">
+                            <span id="waterGradientValue">1.0</span>
                         </div>
                     </div>
                 </div>
-
+    
                 <!-- Graph Section -->
                 <canvas id="pressureDepthChart"></canvas>
             </div>
         </div>
     </div>
-
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="{% static 'assets/js/scripts.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% comment %} <script src="{% static 'assets/js/scripts.js' %}"></script> {% endcomment %}
+    <script>
+
+        let chartData = {
+            gas: { min_pressure: 0, depth: 0, gradient: 0 },
+            oil: { min_pressure: 0, depth: 0, gradient: 0 },
+            water: { min_pressure: 0, depth: 0, gradient: 0 }
+        };
+        
+        $(document).ready(function() {
+            // Handle form submission with AJAX
+            $('#dataForm').on('submit', function(e) {
+                e.preventDefault();  // Prevent the default form submission
+        
+                // Create FormData object to handle file uploads
+                var formData = new FormData(this);
+        
+                $.ajax({
+                    url: '/submit-data/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Update the graph with new data
+                        updateGraph(response.graph_data);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Data submission failed:", error);
+                    }
+                });
+            });
+        
+            // Fetch graph data from the server
+            function fetchGraphData() {
+                $.ajax({
+                    url: '/get-graph-data/',  
+                    method: 'GET',
+                    success: function(response) {
+                        updateGraph(response.graph_data);
+                    }
+                });
+            }
+        
+            // Update the graph with new data
+            function updateGraph(data) {
+                const labels = data.map(item => item.substance);
+                const pressureData = data.map(item => item.min_pressure);
+                const depthData = data.map(item => item.depth_range);
+        
+                const ctx = document.getElementById('pressureDepthChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Pressure (psia)',
+                            data: pressureData,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }, {
+                            label: 'Depth (ft)',
+                            data: depthData,
+                            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                            borderColor: 'rgba(153, 102, 255, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        
+            // Initial graph render
+            fetchGraphData();
+        
+            // Event listeners for control sliders
+            $('.controller').on('input', function () {
+                const id = $(this).attr('id');
+                const value = parseFloat($(this).val());
+            
+                if (id === 'gasMinPressure') $('#gasMinPressureValue').text(value);
+                if (id === 'gasDepthRange') $('#gasDepthRangeValue').text(value);
+                if (id === 'gasGradient') $('#gasGradientValue').text(value);
+            
+                if (id === 'oilMinPressure') $('#oilMinPressureValue').text(value);
+                if (id === 'oilDepthRange') $('#oilDepthRangeValue').text(value);
+                if (id === 'oilGradient') $('#oilGradientValue').text(value);
+            
+                if (id === 'waterMinPressure') $('#waterMinPressureValue').text(value);
+                if (id === 'waterDepthRange') $('#waterDepthRangeValue').text(value);
+                if (id === 'waterGradient') $('#waterGradientValue').text(value);
+            
+                // Optionally: Update the graph based on controller values if needed
+                updateGraph(chartData);
+            });
+            
+        });
+        </script>
+        
 </body>
 </html>

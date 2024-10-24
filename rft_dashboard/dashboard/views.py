@@ -1,46 +1,59 @@
-from django.shortcuts import render
-from .forms import DataInputForm
-from .models import PressureData
 import pandas as pd
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
+from .models import PressureData
+import csv
+import io
+from django.shortcuts import render, redirect
 
-def dashboard_view(request):
-    if request.method == 'POST':
-        form = DataInputForm(request.POST, request.FILES)
-        if form.is_valid():
-            if form.cleaned_data['csv_file']:
-                # Handle CSV file
-                csv_file = form.cleaned_data['csv_file']
-                data = pd.read_csv(csv_file)
-                # Process CSV data and save to model
-            elif form.cleaned_data['data']:
-                # Process pasted data
-                raw_data = form.cleaned_data['data']
-                # Parse raw data and save to mod
-    else:
-        form = DataInputForm()
-
-    return render(request, 'index.html', {'form': form})
-
-def get_chart_data(request):
-    # Query data from the database
-    gas_data = PressureData.objects.filter(substance="Gas")
-    oil_data = PressureData.objects.filter(substance="Oil")
-    water_data = PressureData.objects.filter(substance="Water")
-
-    # Prepare data for Chart.js
-    chart_data = {
-        "gas": {"pressure": [d.min_pressure for d in gas_data], "depth": [d.depth_range for d in gas_data]},
-        "oil": {"pressure": [d.min_pressure for d in oil_data], "depth": [d.depth_range for d in oil_data]},
-        "water": {"pressure": [d.min_pressure for d in water_data], "depth": [d.depth_range for d in water_data]},
-    }
-    return JsonResponse(chart_data)
-
-
-
-@api_view(['POST'])
+def index(request):
+    return render(request, 'index.html')
 def submit_data(request):
-    # Your logic to handle the data submission
-    return Response({'status': 'Data submitted successfully!'})
+    if request.method == 'POST':
+        response_data = {}
+        
+        # Handle pasted data
+        if 'data' in request.POST:
+            pasted_data = request.POST['data']
+            data_lines = pasted_data.strip().split('\n')
+            for line in data_lines:
+                try:
+                    substance, min_pressure, depth_range, pressure_gradient = line.split(',')
+                    PressureData.objects.create(
+                        substance=substance.strip(),
+                        min_pressure=float(min_pressure.strip()),
+                        depth_range=float(depth_range.strip()),
+                        pressure_gradient=float(pressure_gradient.strip())
+                    )
+                except ValueError:
+                    continue
+
+        # Handle uploaded CSV data
+        elif request.FILES.get('csv_file'):
+            csv_file = request.FILES['csv_file']
+            if csv_file.name.endswith('.csv'):
+                decoded_file = csv_file.read().decode('utf-8')
+                io_string = io.StringIO(decoded_file)
+                next(io_string)  # Skip the header if present
+                for line in io_string:
+                    try:
+                        substance, min_pressure, depth_range, pressure_gradient = line.split(',')
+                        PressureData.objects.create(
+                            substance=substance.strip(),
+                            min_pressure=float(min_pressure.strip()),
+                            depth_range=float(depth_range.strip()),
+                            pressure_gradient=float(pressure_gradient.strip())
+                        )
+                    except ValueError:
+                        continue
+
+        # Return updated graph data
+        pressure_data = list(PressureData.objects.all().values('substance', 'min_pressure', 'depth_range'))
+        response_data['graph_data'] = pressure_data
+        return JsonResponse(response_data)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+
+def get_graph_data(request):
+    # Fetch data for the graph
+    pressure_data = list(PressureData.objects.all().values('substance', 'min_pressure', 'depth_range'))
+    return JsonResponse({'graph_data': pressure_data})

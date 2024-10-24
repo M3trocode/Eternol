@@ -1,38 +1,69 @@
-document.getElementById('submitData').addEventListener('click', function() {
-    fetch('/chart-data/')
-    .then(response => response.json())
-    .then(data => {
-        // Update the chart with new data
-        const chart = document.getElementById('pressureDepthChart').getContext('2d');
-        const pressureDepthChart = new Chart(chart, {
+$(document).ready(function() {
+    // Function to fetch graph data
+    function fetchGraphData() {
+        $.ajax({
+            url: '/get-graph-data/',
+            method: 'GET',
+            success: function(response) {
+                updateGraph(response.graph_data);
+            }
+        });
+    }
+
+    // Function to update the graph
+    function updateGraph(data) {
+        const labels = data.map(item => item.substance);
+        const pressureData = data.map(item => item.min_pressure);
+        const depthData = data.map(item => item.depth_range);
+
+        const ctx = document.getElementById('pressureDepthChart').getContext('2d');
+        new Chart(ctx, {
             type: 'line',
             data: {
-                labels: data.oil.depth,  // Depth labels
-                datasets: [
-                    {
-                        label: 'Oil Pressure',
-                        data: data.oil.pressure,
-                        borderColor: 'green',
-                        fill: false,
-                    },
-                    {
-                        label: 'Gas Pressure',
-                        data: data.gas.pressure,
-                        borderColor: 'red',
-                        fill: false,
-                    },
-                    {
-                        label: 'Water Pressure',
-                        data: data.water.pressure,
-                        borderColor: 'blue',
-                        fill: false,
-                    },
-                ]
+                labels: labels,
+                datasets: [{
+                    label: 'Pressure (psia)',
+                    data: pressureData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Depth (ft)',
+                    data: depthData,
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
             },
             options: {
                 scales: {
-                    x: { title: { display: true, text: 'Depth (ft)' } },
-                    y: { title: { display: true, text: 'Pressure (psia)' } }
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Fetch data and update graph on page load
+    fetchGraphData();
+
+    // Submit data via AJAX for raw data input
+    $('form').on('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        $.ajax({
+            url: '/submit-data/',
+            method: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.status === 'success') {
+                    fetchGraphData();  // Refresh graph after new data is submitted
+                } else {
+                    console.error('Error:', response.error);
                 }
             }
         });
